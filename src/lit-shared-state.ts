@@ -172,7 +172,11 @@ export class StateVar<T = unknown> {
   notifyObservers(name: PropertyKey, oldValue: unknown) {
     // litElements
     for (const observer of this.observers.keys()) {
-      observer.update(name, this._value, oldValue);
+      if (observer.isDisconnected) {
+        this.observers.delete(observer);
+      } else {
+        observer.update(name, this._value, oldValue);
+      }
     }
     // custom observers
     for (const observer of this.options.observers) {
@@ -500,6 +504,13 @@ class StateController implements ReactiveController {
       // pop from controller stack after initial render
       __currentController = undefined;
     });
+  }
+  hostDisconnected() {
+    this.host.removeController(this);
+    this.host = null as any;
+  }
+  get isDisconnected() {
+    return this.host == null;
   }
 }
 
